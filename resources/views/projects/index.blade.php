@@ -1,17 +1,47 @@
-<h1>Projects</h1>
+@extends('layouts.app')
 
-@if (session('success'))
+@section('title', 'Projects')
+
+@section('content')
     <div>
-        {{ session('success') }}
+        <h1 class="mb-6 text-3xl font-bold text-gray-800">
+            Projects
+        </h1>
+
+        @if (session('success'))
+            <div class="mb-6 rounded border border-green-200 bg-green-100 px-4 py-2 text-green-700">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        <div class="space-y-4">
+            @foreach ($projects as $project)
+                <div class="rounded border border-gray-200 bg-white p-5 shadow-sm">
+                    <h2 class="text-xl font-bold text-gray-800">
+                        {{ $project->title }}
+                    </h2>
+
+                    <p class="mt-2 text-sm text-gray-600">
+                        {{ $project->description }}
+                    </p>
+
+                    <div class="mt-3 flex gap-2 text-sm">
+                        <a
+                            href="{{ route('projects.show', $project->id) }}"
+                            class="text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                            Lihat Detail
+                        </a>
+
+                        <a
+                            href="{{ route('projects.edit', $project->id) }}"
+                            class="text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                            Edit
+                        </a>
+                    </div>
+                </div>
+            @endforeach
+        </div>
     </div>
-@endif
-
-@foreach ($projects as $project)
-    <h2>
-        <a href="{{ route('projects.show', $project->id) }}">
-            {{ $project->title }}
-        </a>
-    </h2>
-
-    <p>{{ $project->description }}</p>
-@endforeach
+@endsection
