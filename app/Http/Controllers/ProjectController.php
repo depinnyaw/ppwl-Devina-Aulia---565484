@@ -12,7 +12,7 @@ class ProjectController extends Controller
      */
     public function index()
     {
-        $projects = Project::all();
+        $projects = Project::published()->get();
 
         return view('projects.index', compact('projects'));
     }
@@ -34,6 +34,8 @@ class ProjectController extends Controller
         'title' => 'required|min:5',
         'description' => 'required|min:10',
     ]);
+
+    $validatedData['status'] = 'published';
 
     Project::create($validatedData);
 
@@ -84,5 +86,33 @@ class ProjectController extends Controller
 
         return redirect()->route('projects.index')
              ->with('success', 'Project berhasil dihapus.');
+    }
+
+    //tambahkan method untuk menampilkan daftar project yang dihapus
+    public function trash()
+    {
+        $projects = Project::onlyTrashed()->get();
+
+        return view('projects.trash', compact('projects'));
+    }
+
+    //method untuk mengembalikan project yang dihapus
+    public function restore($id)
+    {
+        $project = Project::onlyTrashed()->findOrFail($id);
+        $project->restore();
+
+        return redirect()->route('projects.trash')
+            ->with('success', 'Project berhasil dipulihkan.');
+    }
+
+    //method untuk menghapus project secara permanen
+    public function forceDelete($id)
+    {
+        $project = Project::onlyTrashed()->findOrFail($id);
+        $project->forceDelete();
+
+        return redirect()->route('projects.trash')
+            ->with('success', 'Project berhasil dihapus secara permanen.');
     }
 }

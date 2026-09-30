@@ -8,6 +8,8 @@
             Projects
         </h1>
 
+        <a href="{{ route('projects.trash') }}">Trash</a>
+
         @if (session('success'))
             <div class="mb-6 rounded border border-green-200 bg-green-100 px-4 py-2 text-green-700">
                 {{ session('success') }}
