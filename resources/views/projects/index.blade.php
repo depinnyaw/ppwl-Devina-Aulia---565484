@@ -17,8 +17,52 @@
         @endif
 
         <div class="space-y-4">
+            @php
+                $no = $projects->firstItem();
+            @endphp
+
+            
+            <!-- <form action="{{ route('projects.index') }}" method="GET">
+                <input
+                    type="text"
+                    name="search"
+                    placeholder="Cari judul project..."
+                    value="{{ $search }}"
+                >
+                <button type="submit">Cari</button>
+            </form> -->
+
+            <form action="{{ route('projects.index') }}" method="GET">
+                <input
+                    type="text"
+                    name="search"
+                    placeholder="Cari judul project..."
+                    value="{{ $search }}"
+                >
+
+                <label for="per_page">Data per halaman:</label>
+
+                <select name="per_page" id="per_page">
+                    <option value="5" {{ $perPage == 5 ? 'selected' : '' }}>
+                        5
+                    </option>
+                    <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>
+                        10
+                    </option>
+                    <option value="25" {{ $perPage == 25 ? 'selected' : '' }}>
+                        25
+                    </option>
+                </select>
+
+                <button type="submit">Terapkan</button>
+            </form>
+
             @foreach ($projects as $project)
                 <div class="rounded border border-gray-200 bg-white p-5 shadow-sm">
+                    <p class="mb-2 text-sm text-gray-500">
+                        No. {{ $no++ }}
+                    </p>
+
                     <h2 class="text-xl font-bold text-gray-800">
                         {{ $project->title }}
                     </h2>
@@ -44,6 +88,7 @@
                     </div>
                 </div>
             @endforeach
+            {{ $projects->links() }}
         </div>
     </div>
 @endsection

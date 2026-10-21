@@ -11,6 +11,7 @@ class Project extends Model
     protected $fillable = [
         'title',
         'description',
+        'status',
     ];
 
     public function scopePublished($query)

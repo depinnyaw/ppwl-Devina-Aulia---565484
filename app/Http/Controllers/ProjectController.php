@@ -10,12 +10,64 @@ class ProjectController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        $projects = Project::published()->get();
+    // public function index()
+    // {
+    //     $projects = Project::published()
+    //     ->orderBy('created_at', 'desc')
+    //     ->paginate(10);
 
-        return view('projects.index', compact('projects'));
+    // return view('projects.index', compact('projects'));
+    // }
+
+    // public function index()
+    // {
+    //     $projects = Project::published()
+    //     ->orderBy('created_at', 'desc')
+    //     ->paginate(5);
+
+    // return view('projects.index', compact('projects'));
+    // }
+
+    
+// public function index(Request $request)
+// {
+//     $search = $request->input('search');
+
+//     $projects = Project::published()
+//         ->when($search, function ($query, $search) {
+//             $query->where('title', 'like', '%' . $search . '%');
+//         })
+//         ->orderBy('created_at', 'desc')
+//         ->paginate(5)
+//         ->withQueryString();
+
+//     return view('projects.index', compact('projects', 'search'));
+// }
+
+public function index()
+{
+    $search = request('search');
+
+    $perPage = request()->query('per_page', 5);
+
+    if (!in_array((int) $perPage, [5, 10, 25])) {
+        $perPage = 5;
     }
+
+    $projects = Project::query()
+        ->when($search, function ($query, $search) {
+            $query->where('title', 'like', "%{$search}%");
+        })
+        ->paginate((int) $perPage)
+        ->withQueryString();
+
+    return view('projects.index', compact(
+        'projects',
+        'search',
+        'perPage'
+    ));
+}
+
 
     /**
      * Show the form for creating a new resource.
