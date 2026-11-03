@@ -1,28 +1,44 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('home');
-})->name('home');
+    return view('welcome');
+});
 
-Route::get('/about', function () {
-    return view('about');
-})->name('about');
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::get('/education', function () {
-    return view('education');
-})->name('education');
+// Pengelolaan project hanya bisa diakses oleh admin
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/post/projects/trash', [ProjectController::class, 'trash'])
+        ->name('projects.trash');
 
-Route::get('/projects/trash', [ProjectController::class, 'trash'])
-    ->name('projects.trash');
+    Route::patch('/post/projects/{id}/restore', [ProjectController::class, 'restore'])
+        ->name('projects.restore');
 
-Route::post('/projects/{id}/restore', [ProjectController::class, 'restore'])
-    ->name('projects.restore');
+    Route::delete('/post/projects/{id}/force-delete', [ProjectController::class, 'forceDelete'])
+        ->name('projects.forceDelete');
 
-Route::delete('/projects/{id}/force-delete', [ProjectController::class, 'forceDelete'])
-    ->name('projects.forceDelete');    
+    Route::resource('/post/projects', ProjectController::class);
+});
 
-Route::resource('projects', ProjectController::class);
+// Profil dan halaman Profil Saya bisa diakses semua pengguna yang sudah login
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
 
+    Route::patch('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->name('profile.destroy');
+
+    Route::get('/post/profile-saya', [ProfileController::class, 'profileSaya'])
+        ->name('profile.saya');
+});
+
+require __DIR__.'/auth.php';
