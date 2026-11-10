@@ -18,7 +18,7 @@
             </div>
         @endif
 
-        <form action="{{ route('projects.update', $project->id) }}" method="POST" class="mt-6">
+        <form action="{{ route('projects.update', $project->id) }}" method="POST" enctype="multipart/form-data" class="mt-6">
             @csrf
             @method('PUT')
 
@@ -47,6 +47,81 @@
                     rows="4"
                     class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                 >{{ old('description', $project->description) }}</textarea>
+            </div>
+
+            {{-- Kategori --}}
+            <div class="mb-4">
+                <label for="category_id" class="mb-1 block text-sm font-medium text-gray-700">
+                    Kategori
+                </label>
+
+                <select name="category_id" id="category_id"
+                    class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                    <option value="">Pilih Kategori</option>
+
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->id }}"
+                            {{ old('category_id', $project->category_id) == $category->id ? 'selected' : '' }}>
+                            {{ $category->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Teknologi --}}
+            <div class="mb-4">
+                <label class="mb-1 block text-sm font-medium text-gray-700">
+                    Teknologi
+                </label>
+
+                <div class="flex flex-wrap gap-3">
+                    @foreach ($technologies as $technology)
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox"
+                                name="technologies[]"
+                                value="{{ $technology->id }}"
+                                {{ in_array(
+                                    $technology->id,
+                                    old('technologies', $project->technologies->pluck('id')->toArray())
+                                ) ? 'checked' : '' }}>
+                            {{ $technology->name }}
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- Thumbnail saat ini --}}
+            @if ($project->thumbnail)
+                <div class="mb-4">
+                    <p class="mb-2 text-sm font-medium text-gray-700">
+                        Thumbnail Saat Ini
+                    </p>
+
+                    <img
+                        src="{{ asset('storage/' . $project->thumbnail) }}"
+                        alt="Thumbnail {{ $project->title }}"
+                        class="h-40 w-auto rounded border object-cover"
+                    >
+                </div>
+            @endif
+
+            {{-- Ganti Thumbnail --}}
+            <div class="mb-4">
+                <label for="thumbnail" class="mb-1 block text-sm font-medium text-gray-700">
+                    Ganti Thumbnail
+                </label>
+
+                <input
+                    type="file"
+                    name="thumbnail"
+                    id="thumbnail"
+                    accept="image/*"
+                    class="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                >
+
+                <p class="mt-1 text-xs text-gray-500">
+                    Kosongkan jika tidak ingin mengganti thumbnail. Maksimal 2 MB.
+                </p>
             </div>
 
             <button

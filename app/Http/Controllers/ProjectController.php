@@ -3,144 +3,220 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Project;
+use App\Models\Category;
+use App\Models\Technology;
 
 class ProjectController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    // public function index()
-    // {
-    //     $projects = Project::published()
-    //     ->orderBy('created_at', 'desc')
-    //     ->paginate(10);
+    // Menampilkan daftar project
+    public function index()
+    {
+        $search = request('search');
+        $perPage = request()->query('per_page', 5);
 
-    // return view('projects.index', compact('projects'));
-    // }
+        if (!in_array((int) $perPage, [5, 10, 25])) {
+            $perPage = 5;
+        }
 
-    // public function index()
-    // {
-    //     $projects = Project::published()
-    //     ->orderBy('created_at', 'desc')
-    //     ->paginate(5);
+        $projects = Project::query()
+            ->with(['category', 'technologies'])
+            ->when($search, function ($query, $search) {
+                $query->where('title', 'like', "%{$search}%");
+            })
+            ->paginate((int) $perPage)
+            ->withQueryString();
 
-    // return view('projects.index', compact('projects'));
-    // }
-
-    
-// public function index(Request $request)
-// {
-//     $search = $request->input('search');
-
-//     $projects = Project::published()
-//         ->when($search, function ($query, $search) {
-//             $query->where('title', 'like', '%' . $search . '%');
-//         })
-//         ->orderBy('created_at', 'desc')
-//         ->paginate(5)
-//         ->withQueryString();
-
-//     return view('projects.index', compact('projects', 'search'));
-// }
-
-public function index()
-{
-    $search = request('search');
-
-    $perPage = request()->query('per_page', 5);
-
-    if (!in_array((int) $perPage, [5, 10, 25])) {
-        $perPage = 5;
+        return view('projects.index', compact(
+            'projects',
+            'search',
+            'perPage'
+        ));
     }
 
-    $projects = Project::query()
-        ->when($search, function ($query, $search) {
-            $query->where('title', 'like', "%{$search}%");
-        })
-        ->paginate((int) $perPage)
-        ->withQueryString();
-
-    return view('projects.index', compact(
-        'projects',
-        'search',
-        'perPage'
-    ));
-}
-
-
-    /**
-     * Show the form for creating a new resource.
-     */
+    // Menampilkan form tambah project
     public function create()
     {
-        return view('projects.create');
+        $categories = Category::all();
+        $technologies = Technology::all();
+
+        return view('projects.create', compact(
+            'categories',
+            'technologies'
+        ));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Menyimpan project baru
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-        'title' => 'required|min:5',
-        'description' => 'required|min:10',
-    ]);
+            'title' => 'required|min:5',
+            'description' => 'required|min:10',
+            'category_id' => 'nullable|exists:categories,id',
+            'technologies' => 'nullable|array',
+            'technologies.*' => 'exists:technologies,id',
+            'thumbnail' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048',
+                'dimensions:min_width=400,min_height=300',
+            ],
+        ]);
 
-    $validatedData['status'] = 'published';
+        // Membuat slug otomatis
+        $baseSlug = Str::slug($validatedData['title']);
+        $slug = $baseSlug;
+        $counter = 1;
 
-    Project::create($validatedData);
+        while (Project::where('slug', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
 
-    return redirect()->route('projects.index')
-        ->with('success', 'Project berhasil ditambahkan.');
+        $validatedData['slug'] = $slug;
+        $validatedData['status'] = 'published';
+
+        // Upload thumbnail
+        if ($request->hasFile('thumbnail')) {
+            $validatedData['thumbnail'] = $request->file('thumbnail')
+                ->store('projects/thumbnails', 'public');
+        }
+
+        // Memisahkan data teknologi
+        $technologyIds = $validatedData['technologies'] ?? [];
+        unset($validatedData['technologies']);
+
+        // Menyimpan project
+        $project = Project::create($validatedData);
+
+        // Menghubungkan project dengan teknologi
+        $project->technologies()->sync($technologyIds);
+
+        return redirect()->route('projects.index')
+            ->with('success', 'Project berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
+    // Menampilkan detail project admin
     public function show(Project $project)
     {
+        $project->load(['category', 'technologies', 'images']);
+
         return view('projects.show', compact('project'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+    // Menampilkan detail project publik berdasarkan slug
+    public function publicShow(string $slug)
+    {
+        $project = Project::published()
+            ->with(['images', 'category', 'technologies'])
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        return view('projects.public-show', compact('project'));
+    }
+
+    // Menampilkan form edit project
     public function edit(Project $project)
     {
-        return view('projects.edit', compact('project'));
+        $categories = Category::all();
+        $technologies = Technology::all();
+
+        $project->load('technologies');
+
+        return view('projects.edit', compact(
+            'project',
+            'categories',
+            'technologies'
+        ));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    // Memperbarui project
     public function update(Request $request, string $id)
     {
-         $validatedData = $request->validate([
-        'title' => 'required|min:5',
-        'description' => 'required|min:10',
-    ]);
+        $validatedData = $request->validate([
+            'title' => 'required|min:5',
+            'description' => 'required|min:10',
+            'category_id' => 'nullable|exists:categories,id',
+            'technologies' => 'nullable|array',
+            'technologies.*' => 'exists:technologies,id',
+            'thumbnail' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048',
+                'dimensions:min_width=400,min_height=300',
+            ],
+        ]);
 
-    $project = Project::findOrFail($id);
-    $project->update($validatedData);
+        $project = Project::findOrFail($id);
 
-    return redirect()->route('projects.index')
-        ->with('success', 'Project berhasil diperbarui.');
+        // Membuat slug baru jika judul berubah
+        if ($project->title !== $validatedData['title']) {
+            $baseSlug = Str::slug($validatedData['title']);
+            $slug = $baseSlug;
+            $counter = 1;
+
+            while (
+                Project::where('slug', $slug)
+                    ->where('id', '!=', $project->id)
+                    ->exists()
+            ) {
+                $slug = $baseSlug . '-' . $counter;
+                $counter++;
+            }
+
+            $validatedData['slug'] = $slug;
+        }
+
+        // Mengganti thumbnail jika ada file baru
+        if ($request->hasFile('thumbnail')) {
+            if ($project->thumbnail) {
+                Storage::disk('public')->delete($project->thumbnail);
+            }
+
+            $validatedData['thumbnail'] = $request->file('thumbnail')
+                ->store('projects/thumbnails', 'public');
+        }
+
+        // Memisahkan data teknologi
+        $technologyIds = $validatedData['technologies'] ?? [];
+        unset($validatedData['technologies']);
+
+        // Memperbarui project
+        $project->update($validatedData);
+
+        // Memperbarui relasi teknologi
+        $project->technologies()->sync($technologyIds);
+
+        return redirect()->route('projects.index')
+            ->with('success', 'Project berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // Menghapus project (soft delete)
     public function destroy(string $id)
     {
         $project = Project::findOrFail($id);
+
+        // Hapus thumbnail
+        if ($project->thumbnail) {
+            Storage::disk('public')->delete($project->thumbnail);
+        }
+
+        // Hapus gambar gallery
+        foreach ($project->images as $image) {
+            Storage::disk('public')->delete($image->image);
+        }
+
         $project->delete();
 
         return redirect()->route('projects.index')
-             ->with('success', 'Project berhasil dihapus.');
+            ->with('success', 'Project beserta seluruh gambarnya berhasil dihapus.');
     }
 
-    //tambahkan method untuk menampilkan daftar project yang dihapus
+    // Menampilkan project yang dihapus
     public function trash()
     {
         $projects = Project::onlyTrashed()->get();
@@ -148,20 +224,26 @@ public function index()
         return view('projects.trash', compact('projects'));
     }
 
-    //method untuk mengembalikan project yang dihapus
+    // Memulihkan project
     public function restore($id)
     {
         $project = Project::onlyTrashed()->findOrFail($id);
+
         $project->restore();
 
         return redirect()->route('projects.trash')
             ->with('success', 'Project berhasil dipulihkan.');
     }
 
-    //method untuk menghapus project secara permanen
+    // Menghapus project secara permanen
     public function forceDelete($id)
     {
         $project = Project::onlyTrashed()->findOrFail($id);
+
+        if ($project->thumbnail) {
+            Storage::disk('public')->delete($project->thumbnail);
+        }
+
         $project->forceDelete();
 
         return redirect()->route('projects.trash')

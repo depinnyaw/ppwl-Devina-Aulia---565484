@@ -18,7 +18,7 @@
             </div>
         @endif
 
-        <form action="{{ route('projects.store') }}" method="POST" class="mt-6">
+        <form action="{{ route('projects.store') }}" method="POST" enctype="multipart/form-data" class="mt-6">
             @csrf
 
             <div class="mb-4">
@@ -46,6 +46,64 @@
                     rows="4"
                     class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                 >{{ old('description') }}</textarea>
+            </div>
+
+            {{-- Kategori --}}
+            <div class="mb-4">
+                <label for="category_id" class="mb-1 block text-sm font-medium text-gray-700">
+                    Kategori
+                </label>
+
+                <select name="category_id" id="category_id"
+                    class="w-full rounded border border-gray-300 px-3 py-2 text-sm">
+                    <option value="">Pilih Kategori</option>
+
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->id }}"
+                            {{ old('category_id') == $category->id ? 'selected' : '' }}>
+                            {{ $category->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Teknologi --}}
+            <div class="mb-4">
+                <label class="mb-1 block text-sm font-medium text-gray-700">
+                    Teknologi
+                </label>
+
+                <div class="flex flex-wrap gap-3">
+                    @foreach ($technologies as $technology)
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox"
+                                name="technologies[]"
+                                value="{{ $technology->id }}"
+                                {{ in_array($technology->id, old('technologies', [])) ? 'checked' : '' }}>
+                            {{ $technology->name }}
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+
+
+            {{-- Thumbnail --}}
+            <div class="mb-4">
+                <label for="thumbnail" class="mb-1 block text-sm font-medium text-gray-700">
+                    Thumbnail Project
+                </label>
+
+                <input
+                    type="file"
+                    name="thumbnail"
+                    id="thumbnail"
+                    accept="image/*"
+                    class="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                >
+
+                <p class="mt-1 text-xs text-gray-500">
+                    Format JPG, JPEG, PNG, atau WEBP. Maksimal 2 MB.
+                </p>
             </div>
 
             <button

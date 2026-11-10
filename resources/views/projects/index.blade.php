@@ -3,92 +3,131 @@
 @section('title', 'Projects')
 
 @section('content')
-    <div>
-        <h1 class="mb-6 text-3xl font-bold text-gray-800">
-            Projects
-        </h1>
+<div class="min-h-screen bg-gray-50 px-6 py-8">
+    <div class="mx-auto max-w-7xl">
 
-        <a href="{{ route('projects.trash') }}">Trash</a>
+        {{-- Header --}}
+        <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Projects</h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    Kelola seluruh project portfolio kamu.
+                </p>
+            </div>
 
+            <a href="{{ route('projects.trash') }}"
+               class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                Trash Projects
+            </a>
+        </div>
+
+        {{-- Notifikasi --}}
         @if (session('success'))
-            <div class="mb-6 rounded border border-green-200 bg-green-100 px-4 py-2 text-green-700">
+            <div class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700">
                 {{ session('success') }}
             </div>
         @endif
 
-        <div class="space-y-4">
-            @php
-                $no = $projects->firstItem();
-            @endphp
+        {{-- Search dan Pagination Setting --}}
+        <form action="{{ route('projects.index') }}" method="GET"
+              class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 bg-white p-4">
 
-            
-            <!-- <form action="{{ route('projects.index') }}" method="GET">
-                <input
-                    type="text"
-                    name="search"
-                    placeholder="Cari judul project..."
-                    value="{{ $search }}"
-                >
-                <button type="submit">Cari</button>
-            </form> -->
+            <input
+                type="text"
+                name="search"
+                placeholder="Cari judul project..."
+                value="{{ $search }}"
+                class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none sm:w-72"
+            >
 
-            <form action="{{ route('projects.index') }}" method="GET">
-                <input
-                    type="text"
-                    name="search"
-                    placeholder="Cari judul project..."
-                    value="{{ $search }}"
-                >
+            <select name="per_page"
+                    class="rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                <option value="5" {{ $perPage == 5 ? 'selected' : '' }}>5 data</option>
+                <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10 data</option>
+                <option value="25" {{ $perPage == 25 ? 'selected' : '' }}>25 data</option>
+            </select>
 
-                <label for="per_page">Data per halaman:</label>
+            <button type="submit"
+                    class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                Terapkan
+            </button>
+        </form>
 
-                <select name="per_page" id="per_page">
-                    <option value="5" {{ $perPage == 5 ? 'selected' : '' }}>
-                        5
-                    </option>
-                    <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>
-                        10
-                    </option>
-                    <option value="25" {{ $perPage == 25 ? 'selected' : '' }}>
-                        25
-                    </option>
-                </select>
+        {{-- Daftar Project --}}
+        @php
+            $no = $projects->firstItem();
+        @endphp
 
-                <button type="submit">Terapkan</button>
-            </form>
+        @if ($projects->count() > 0)
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
-            @foreach ($projects as $project)
-                <div class="rounded border border-gray-200 bg-white p-5 shadow-sm">
-                    <p class="mb-2 text-sm text-gray-500">
-                        No. {{ $no++ }}
-                    </p>
+                @foreach ($projects as $project)
+                    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
 
-                    <h2 class="text-xl font-bold text-gray-800">
-                        {{ $project->title }}
-                    </h2>
+                        {{-- Thumbnail --}}
+                        @if ($project->thumbnail)
+                            <img
+                                src="{{ asset('storage/' . $project->thumbnail) }}"
+                                alt="Thumbnail {{ $project->title }}"
+                                class="h-48 w-full object-cover"
+                            >
+                        @else
+                            <div class="flex h-48 items-center justify-center bg-gray-100 text-sm text-gray-400">
+                                Belum ada thumbnail
+                            </div>
+                        @endif
 
-                    <p class="mt-2 text-sm text-gray-600">
-                        {{ $project->description }}
-                    </p>
+                        {{-- Informasi --}}
+                        <div class="p-5">
+                            <div class="mb-3 flex items-center justify-between">
+                                <span class="text-xs text-gray-400">
+                                    Project #{{ $no++ }}
+                                </span>
 
-                    <div class="mt-3 flex gap-2 text-sm">
-                        <a
-                            href="{{ route('projects.show', $project->id) }}"
-                            class="text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                            Lihat Detail
-                        </a>
+                                <span class="rounded-full px-3 py-1 text-xs font-medium
+                                    {{ $project->status === 'published'
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-yellow-100 text-yellow-700' }}">
+                                    {{ ucfirst($project->status) }}
+                                </span>
+                            </div>
 
-                        <a
-                            href="{{ route('projects.edit', $project->id) }}"
-                            class="text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                            Edit
-                        </a>
+                            <h2 class="truncate text-lg font-bold text-gray-800">
+                                {{ $project->title }}
+                            </h2>
+
+                            <p class="mt-2 h-10 overflow-hidden text-sm leading-5 text-gray-500">
+                                {{ $project->description }}
+                            </p>
+
+                            <div class="mt-5 flex items-center gap-3 border-t border-gray-100 pt-4">
+                                <a href="{{ route('projects.show', $project->id) }}"
+                                   class="text-sm font-medium text-blue-600 hover:text-blue-800">
+                                    Lihat Detail
+                                </a>
+
+                                <a href="{{ route('projects.edit', $project->id) }}"
+                                   class="text-sm font-medium text-gray-600 hover:text-gray-900">
+                                    Edit
+                                </a>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            @endforeach
+                @endforeach
+
+            </div>
+        @else
+            <div class="rounded-xl border border-gray-200 bg-white py-16 text-center">
+                <p class="text-gray-500">Project tidak ditemukan.</p>
+            </div>
+        @endif
+
+        {{-- Pagination --}}
+        <div class="mt-8">
             {{ $projects->links() }}
         </div>
+
     </div>
+</div>
 @endsection
+```

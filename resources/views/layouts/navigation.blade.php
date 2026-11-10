@@ -12,9 +12,14 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
+                    @if (Auth::user()->role === 'admin')
+                        <x-nav-link
+                            :href="route('post.dashboard')"
+                            :active="request()->routeIs('post.dashboard')"
+                        >
+                            {{ __('Dashboard Admin') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -95,10 +100,14 @@
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
 
-                <x-responsive-nav-link :href="route('logout')"
-                    onclick="event.preventDefault(); this.closest('form').submit();">
-                    {{ __('Log Out') }}
-                </x-responsive-nav-link>
+                @if (Auth::user()->role === 'admin')
+                    <x-responsive-nav-link
+                        :href="route('post.dashboard')"
+                        :active="request()->routeIs('post.dashboard')"
+                    >
+                        {{ __('Dashboard Admin') }}
+                    </x-responsive-nav-link>
+                @endif
             </form>
         </div>
     </div>
