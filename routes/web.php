@@ -2,10 +2,11 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProjectGalleryController;
 use App\Http\Controllers\SkillController;
+use App\Http\Controllers\PortfolioController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
@@ -13,6 +14,12 @@ Route::get('/', function () {
 
 Route::view('/experience', 'experience')->name('experience');
 Route::view('/education', 'education')->name('education');
+
+Route::get('/projects', [PortfolioController::class, 'projects'])
+    ->name('projects');
+
+Route::get('/projects/{slug}', [ProjectController::class, 'publicShow'])
+    ->name('projects.public.show');
 
 Route::get('/projects/{slug}', [ProjectController::class, 'publicShow'])
     ->name('projects.public.show');

@@ -28,30 +28,66 @@
             </div>
         @endif
 
-        {{-- Search dan Pagination Setting --}}
-        <form action="{{ route('projects.index') }}" method="GET"
+        {{-- Search dan Filter --}}
+        <form action="{{ route('projects.index') }}"
+              method="GET"
               class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 bg-white p-4">
 
+            {{-- Search --}}
             <input
                 type="text"
                 name="search"
                 placeholder="Cari judul project..."
                 value="{{ $search }}"
-                class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none sm:w-72"
+                class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none sm:w-64"
             >
 
-            <select name="per_page"
+            {{-- Filter Status --}}
+            <select name="status"
                     class="rounded-lg border border-gray-300 px-3 py-2 text-sm">
-                <option value="5" {{ $perPage == 5 ? 'selected' : '' }}>5 data</option>
-                <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10 data</option>
-                <option value="25" {{ $perPage == 25 ? 'selected' : '' }}>25 data</option>
+
+                <option value="">Semua status</option>
+
+                <option value="draft"
+                    @selected($status === 'draft')>
+                    Draft
+                </option>
+
+                <option value="published"
+                    @selected($status === 'published')>
+                    Published
+                </option>
+
             </select>
 
+            {{-- Jumlah Data --}}
+            <select name="per_page"
+                    class="rounded-lg border border-gray-300 px-3 py-2 text-sm">
+
+                <option value="5" @selected((int) $perPage === 5)>5 data</option>
+                <option value="10" @selected((int) $perPage === 10)>10 data</option>
+                <option value="25" @selected((int) $perPage === 25)>25 data</option>
+
+            </select>
+
+            {{-- Tombol Terapkan --}}
             <button type="submit"
                     class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700">
                 Terapkan
             </button>
+
+            {{-- Tombol Reset --}}
+            <a href="{{ route('projects.index') }}"
+               class="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                Reset
+            </a>
+
         </form>
+
+        {{-- Jumlah Hasil --}}
+        <p class="mb-5 text-sm text-gray-500">
+            {{ $projects->total() }} hasil ditemukan.
+        </p>
 
         {{-- Daftar Project --}}
         @php
@@ -79,6 +115,7 @@
 
                         {{-- Informasi --}}
                         <div class="p-5">
+
                             <div class="mb-3 flex items-center justify-between">
                                 <span class="text-xs text-gray-400">
                                     Project #{{ $no++ }}
@@ -100,7 +137,15 @@
                                 {{ $project->description }}
                             </p>
 
-                            <div class="mt-5 flex items-center gap-3 border-t border-gray-100 pt-4">
+                            {{-- Kategori --}}
+                            @if ($project->category)
+                                <p class="mt-2 text-xs text-gray-500">
+                                    Kategori: {{ $project->category->name }}
+                                </p>
+                            @endif
+
+                            <div class="mt-5 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-4">
+
                                 <a href="{{ route('projects.show', $project->id) }}"
                                    class="text-sm font-medium text-blue-600 hover:text-blue-800">
                                     Lihat Detail
@@ -110,15 +155,19 @@
                                    class="text-sm font-medium text-gray-600 hover:text-gray-900">
                                     Edit
                                 </a>
+
                             </div>
                         </div>
                     </div>
                 @endforeach
 
             </div>
+
         @else
             <div class="rounded-xl border border-gray-200 bg-white py-16 text-center">
-                <p class="text-gray-500">Project tidak ditemukan.</p>
+                <p class="text-gray-500">
+                    Project tidak ditemukan.
+                </p>
             </div>
         @endif
 
@@ -130,4 +179,3 @@
     </div>
 </div>
 @endsection
-```

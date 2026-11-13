@@ -48,6 +48,26 @@
                 >{{ old('description') }}</textarea>
             </div>
 
+            {{-- Tanggal Project --}}
+            <div class="mb-4">
+                <label for="project_date"
+                    class="mb-1 block text-sm font-medium text-gray-700">
+                    Tanggal Project
+                </label>
+
+                <input
+                    type="date"
+                    name="project_date"
+                    id="project_date"
+                    value="{{ old('project_date') }}"
+                    class="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                >
+
+                @error('project_date')
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                @enderror
+            </div>
+
             {{-- Kategori --}}
             <div class="mb-4">
                 <label for="category_id" class="mb-1 block text-sm font-medium text-gray-700">

@@ -12,29 +12,50 @@ use App\Models\Technology;
 class ProjectController extends Controller
 {
     // Menampilkan daftar project
-    public function index()
-    {
-        $search = request('search');
-        $perPage = request()->query('per_page', 5);
+    
+public function index()
+{
+    // Mengambil parameter dari URL
+    $search = request('search');
+    $status = request()->query('status');
+    $perPage = request()->query('per_page', 5);
 
-        if (!in_array((int) $perPage, [5, 10, 25])) {
-            $perPage = 5;
-        }
-
-        $projects = Project::query()
-            ->with(['category', 'technologies'])
-            ->when($search, function ($query, $search) {
-                $query->where('title', 'like', "%{$search}%");
-            })
-            ->paginate((int) $perPage)
-            ->withQueryString();
-
-        return view('projects.index', compact(
-            'projects',
-            'search',
-            'perPage'
-        ));
+    // Membatasi pilihan jumlah data per halaman
+    if (!in_array((int) $perPage, [5, 10, 25])) {
+        $perPage = 5;
     }
+
+    // Memastikan status hanya draft atau published
+    if (!in_array($status, ['draft', 'published'], true)) {
+        $status = null;
+    }
+
+    // Query project
+    $projects = Project::query()
+        ->with(['category', 'technologies'])
+
+        // Search berdasarkan judul
+        ->when($search, function ($query, $search) {
+            $query->where('title', 'like', "%{$search}%");
+        })
+
+        // Filter berdasarkan status
+        ->when($status, function ($query, $status) {
+            $query->where('status', $status);
+        })
+
+        // Pagination
+        ->paginate((int) $perPage)
+        ->withQueryString();
+
+    return view('projects.index', compact(
+        'projects',
+        'search',
+        'status',
+        'perPage'
+    ));
+}
+
 
     // Menampilkan form tambah project
     public function create()
@@ -52,19 +73,26 @@ class ProjectController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'title' => 'required|min:5',
-            'description' => 'required|min:10',
-            'category_id' => 'nullable|exists:categories,id',
-            'technologies' => 'nullable|array',
-            'technologies.*' => 'exists:technologies,id',
-            'thumbnail' => [
-                'nullable',
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:2048',
-                'dimensions:min_width=400,min_height=300',
-            ],
-        ]);
+        'title' => 'required|string|min:5|max:255',
+        'description' => 'required|string|min:10',
+
+        'short_description' => 'nullable|string|max:255',
+        'project_date' => 'nullable|date',
+        'is_featured' => 'sometimes|boolean',
+        'project_url' => 'nullable|url|max:255',
+        'repository_url' => 'nullable|url|max:255',
+
+        'category_id' => 'nullable|exists:categories,id',
+        'technologies' => 'nullable|array',
+        'technologies.*' => 'exists:technologies,id',
+        'thumbnail' => [
+            'nullable',
+            'image',
+            'mimes:jpg,jpeg,png,webp',
+            'max:2048',
+            'dimensions:min_width=400,min_height=300',
+        ],
+]);
 
         // Membuat slug otomatis
         $baseSlug = Str::slug($validatedData['title']);
@@ -93,7 +121,7 @@ class ProjectController extends Controller
         $project = Project::create($validatedData);
 
         // Menghubungkan project dengan teknologi
-        $project->technologies()->sync($technologyIds);
+        $project->technologies()->attach($technologyIds);
 
         return redirect()->route('projects.index')
             ->with('success', 'Project berhasil ditambahkan.');
@@ -137,19 +165,26 @@ class ProjectController extends Controller
     public function update(Request $request, string $id)
     {
         $validatedData = $request->validate([
-            'title' => 'required|min:5',
-            'description' => 'required|min:10',
-            'category_id' => 'nullable|exists:categories,id',
-            'technologies' => 'nullable|array',
-            'technologies.*' => 'exists:technologies,id',
-            'thumbnail' => [
-                'nullable',
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:2048',
-                'dimensions:min_width=400,min_height=300',
-            ],
-        ]);
+        'title' => 'required|string|min:5|max:255',
+        'description' => 'required|string|min:10',
+
+        'short_description' => 'nullable|string|max:255',
+        'project_date' => 'nullable|date',
+        'is_featured' => 'sometimes|boolean',
+        'project_url' => 'nullable|url|max:255',
+        'repository_url' => 'nullable|url|max:255',
+
+        'category_id' => 'nullable|exists:categories,id',
+        'technologies' => 'nullable|array',
+        'technologies.*' => 'exists:technologies,id',
+        'thumbnail' => [
+            'nullable',
+            'image',
+            'mimes:jpg,jpeg,png,webp',
+            'max:2048',
+            'dimensions:min_width=400,min_height=300',
+        ],
+    ]);
 
         $project = Project::findOrFail($id);
 

@@ -13,10 +13,15 @@ class Project extends Model
     protected $fillable = [
         'title',
         'slug',
+        'category_id',
+        'short_description',
         'description',
         'status',
+        'project_date',
+        'is_featured',
+        'project_url',
+        'repository_url',
         'thumbnail',
-        'category_id',
     ];
 
     public function scopePublished($query)
